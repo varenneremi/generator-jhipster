@@ -45,12 +45,7 @@
     </div>
     <%_ } _%>
     <br/>
-    
-    <style>
-    .wrapper {
-        display: grid;
-    }
-    </style>
+   
     <div class="wrapper" *ngIf="<%=entityInstancePlural %>">
             <thead>
             <div<% if (pagination !== 'no') { %> jhiSort [(predicate)]="predicate" [(ascending)]="reverse" [callback]="<%=pagination !== 'infinite-scroll' ? 'transition.bind(this)' : 'reset.bind(this)'%>"<% } %>>
@@ -172,6 +167,12 @@
             </tbody>
         </div>
     </div>
+    
+    <style>
+    .wrapper {
+        display: grid;
+    }
+    </style>
     
     <dt>QrCode</dt>
                 <dd>
