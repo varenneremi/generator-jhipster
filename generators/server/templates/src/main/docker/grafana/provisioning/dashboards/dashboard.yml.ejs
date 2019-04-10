@@ -16,11 +16,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-# Sample alerting rules
+apiVersion: 1
 
-ALERT first_registration
-  IF com_mycompany_myapp_web_rest_AccountResource_registerAccount_count == 1
-  ANNOTATIONS {
-    summary = "Your first user has registered his account. Congrats !",
-    description = "Current AccountResource_registerAccount_count value: {{ $value }}"
-  }
+providers:
+  - name: 'Prometheus'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

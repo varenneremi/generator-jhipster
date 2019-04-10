@@ -719,6 +719,9 @@ module.exports = class extends Generator {
      * @param {string} blueprint - name of the blueprint
      */
     normalizeBlueprintName(blueprint) {
+        if (blueprint && blueprint.startsWith('@')) {
+            return blueprint;
+        }
         if (blueprint && !blueprint.startsWith('generator-jhipster')) {
             return `generator-jhipster-${blueprint}`;
         }
@@ -820,10 +823,11 @@ module.exports = class extends Generator {
             } else {
                 const javaVersion = stderr.match(/(?:java|openjdk) version "(.*)"/)[1];
                 if (
+                    !javaVersion.match(new RegExp('12'.replace('.', '\\.'))) &&
                     !javaVersion.match(new RegExp('11'.replace('.', '\\.'))) &&
                     !javaVersion.match(new RegExp(constants.JAVA_VERSION.replace('.', '\\.')))
                 ) {
-                    this.warning(`Java 8 or Java 11 are not found on your computer. Your Java version is: ${chalk.yellow(javaVersion)}`);
+                    this.warning(`Java 8, 11, or 12 are not found on your computer. Your Java version is: ${chalk.yellow(javaVersion)}`);
                 }
             }
             done();
@@ -1014,7 +1018,7 @@ module.exports = class extends Generator {
                 tsType = fieldType;
             } else if (fieldType === 'Boolean') {
                 tsType = 'boolean';
-            } else if (['Integer', 'Long', 'Float', 'Double', 'BigDecimal'].includes(fieldType)) {
+            } else if (['Integer', 'Long', 'Float', 'Double', 'BigDecimal', 'Duration'].includes(fieldType)) {
                 tsType = 'number';
             } else if (fieldType === 'String' || fieldType === 'UUID') {
                 tsType = 'string';
@@ -1203,7 +1207,7 @@ module.exports = class extends Generator {
      * @param {string} fieldType
      */
     getSpecificationBuilder(fieldType) {
-        if (['Integer', 'Long', 'Float', 'Double', 'BigDecimal', 'LocalDate', 'ZonedDateTime', 'Instant'].includes(fieldType)) {
+        if (['Integer', 'Long', 'Float', 'Double', 'BigDecimal', 'LocalDate', 'ZonedDateTime', 'Instant', 'Duration'].includes(fieldType)) {
             return 'buildRangeSpecification';
         }
         if (fieldType === 'String') {

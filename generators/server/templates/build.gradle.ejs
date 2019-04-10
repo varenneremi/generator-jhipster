@@ -58,7 +58,7 @@ plugins {
 
 sourceCompatibility=<%= JAVA_VERSION %>
 targetCompatibility=<%= JAVA_VERSION %>
-assert System.properties["java.specification.version"] == "1.8" || "11"
+assert System.properties["java.specification.version"] == "1.8" || "11" || "12"
 
 apply plugin: "org.springframework.boot"
 apply plugin: "propdeps"
@@ -83,9 +83,19 @@ if (project.hasProperty("zipkin")) {
 <%_ } _%>
 
 idea {
-  module {
-    excludeDirs += files("node_modules")
-  }
+    module {
+        excludeDirs += files("node_modules")
+    }
+}
+
+eclipse {
+    sourceSets {
+        main {
+            java {
+                srcDirs += ["build/generated/source/apt/main"]
+            }
+        }
+    }
 }
 
 defaultTasks "bootRun"
@@ -215,7 +225,7 @@ liquibase {
             username "<% if (devDatabaseType === 'mysql') { %>root<% } else if (devDatabaseType === 'postgresql' || devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { %><%= baseName %><% } else if (devDatabaseType === 'mssql') { %>SA<% } %>"
             password "<% if (devDatabaseType === 'mssql') { %>yourStrong(!)Password<% } %>"
             changeLogFile project.ext.diffChangelogFile
-            referenceUrl "hibernate:spring:<%=packageName%>.domain?dialect=<% if (devDatabaseType === 'mysql') { %>org.hibernate.dialect.MySQL5InnoDBDialect<% } else if (devDatabaseType === 'mariadb') { %>org.hibernate.dialect.MySQL5InnoDBDialect<% } else if (devDatabaseType === 'postgresql') { %>org.hibernate.dialect.PostgreSQL95Dialect<% } else if (devDatabaseType === 'h2Disk') { %>org.hibernate.dialect.H2Dialect<% } else if (devDatabaseType === 'oracle') { %>org.hibernate.dialect.Oracle12cDialect<% } else if (devDatabaseType === 'mssql') { %>org.hibernate.dialect.SQLServerDialect<% } %>&amp;hibernate.physical_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy&amp;hibernate.implicit_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy"
+            referenceUrl "hibernate:spring:<%=packageName%>.domain?dialect=<% if (devDatabaseType === 'mysql') { %>org.hibernate.dialect.MySQL5InnoDBDialect<% } else if (devDatabaseType === 'mariadb') { %>org.hibernate.dialect.MySQL5InnoDBDialect<% } else if (devDatabaseType === 'postgresql') { %>org.hibernate.dialect.PostgreSQL95Dialect<% } else if (devDatabaseType === 'h2Disk') { %>org.hibernate.dialect.H2Dialect<% } else if (devDatabaseType === 'oracle') { %>org.hibernate.dialect.Oracle12cDialect<% } else if (devDatabaseType === 'mssql') { %>org.hibernate.dialect.SQLServerDialect<% } %>&hibernate.physical_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy&hibernate.implicit_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy"
             defaultSchemaName "<% if (devDatabaseType === 'mysql') { %><%= baseName %><% } else if (devDatabaseType === 'postgresql') { %><% } %>"
             logLevel "debug"
             classpath "$buildDir/classes/java/main"
@@ -240,10 +250,15 @@ repositories {
     jcenter()
     <%_ if (devDatabaseType === 'oracle' || prodDatabaseType === 'oracle') { _%>
     // more information at https://blogs.oracle.com/dev2dev/entry/how_to_get_oracle_jdbc
-    maven { url "https://maven.oracle.com" }
+    // https://discuss.gradle.org/t/support-for-maven-repositories-that-use-realm-based-sso/14456/5
+    maven {
+        url "https://www.oracle.com/content/secure/maven/content"
+        credentials {
+            username ''
+            password ''
+        }
+    }
     <%_ } _%>
-    // TODO To remove after final JHipster release
-    maven { url "http://oss.sonatype.org/content/repositories/snapshots" }
     //jhipster-needle-gradle-repositories - JHipster will add additional repositories
 }
 
@@ -343,9 +358,8 @@ dependencies {
     implementation ("com.github.vanroy:spring-boot-starter-data-jest") {
         exclude module: "commons-logging"
     }
-    // log4j needed to create embedded elasticsearch instance
-    runtimeOnly "org.apache.logging.log4j:log4j-api:2.7"
-    runtimeOnly "org.apache.logging.log4j:log4j-core:2.7"
+    // log4j2-mock needed to create embedded elasticsearch instance with SLF4J
+    runtimeOnly "de.dentrassi.elasticsearch:log4j2-mock:0.0.1"
     // end of Spring Data Jest dependencies
     <%_ } _%>
     <%_ if (['mongodb', 'cassandra', 'couchbase'].includes(databaseType)) { _%>
@@ -360,7 +374,13 @@ dependencies {
     implementation ("org.springframework.boot:spring-boot-starter-web<% if (reactive) { %>flux<% } %>") {
         exclude module: "spring-boot-starter-tomcat"
     }
+    <%_ if (!reactive) { _%>
     implementation "org.springframework.boot:spring-boot-starter-undertow"
+    <%_ } _%>
+    <%_ if (reactive) { _%>
+    implementation "org.springframework.boot:spring-boot-starter-validation"
+    implementation "io.netty:netty-tcnative-boringssl-static"
+    <%_ } _%>
     <%_ if (websocket === 'spring-websocket') { _%>
     implementation "org.springframework.boot:spring-boot-starter-websocket"
     <%_ } _%>
@@ -389,7 +409,7 @@ dependencies {
     implementation "org.springframework.cloud:spring-cloud-starter-consul-discovery"
     implementation "org.springframework.cloud:spring-cloud-starter-consul-config"
     <%_ } _%>
-    <%_ if (authenticationType === 'oauth2' || authenticationType === 'uaa') { _%>
+    <%_ if (authenticationType === 'uaa') { _%>
     implementation "org.springframework.cloud:spring-cloud-security"
     <%_ } _%>
     <%_ if (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa') { _%>
@@ -403,11 +423,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-messaging"
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
-    implementation "org.springframework.security.oauth:spring-security-oauth2"
-    implementation "org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure"
-        <%_ if (applicationType === 'gateway' || applicationType === 'microservice') { _%>
-    implementation "org.springframework.security:spring-security-jwt"
-        <%_ } _%>
+    implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+    implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
     <%_ } _%>
     <%_ if (authenticationType === 'jwt') { _%>
     implementation "io.jsonwebtoken:jjwt-api"
@@ -417,6 +434,7 @@ dependencies {
     <%_ if (authenticationType === 'uaa') { _%>
     implementation "org.springframework.security.oauth:spring-security-oauth2"
     implementation "org.springframework.security:spring-security-jwt"
+    <% if (databaseType === 'sql') { %>implementation<% } else { %>runtimeOnly<% } %> "org.glassfish.jaxb:jaxb-runtime:${jaxb_runtime_version}"
     <%_ } _%>
     <%_ if (databaseType === 'mongodb') { _%>
     implementation "com.github.mongobee:mongobee"
@@ -454,8 +472,9 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstruct_version}"
     <%_ if (databaseType === 'sql') { _%>
     annotationProcessor "org.hibernate:hibernate-jpamodelgen:${hibernate_version}"
-    annotationProcessor "javax.xml.bind:jaxb-api:${jaxb_api_version}"
-    annotationProcessor "com.sun.xml.bind:jaxb-impl:${jaxb_impl_version}"
+        <%_ if (authenticationType !== 'uaa') { _%>
+    annotationProcessor "org.glassfish.jaxb:jaxb-runtime:${jaxb_runtime_version}"
+        <%_ } _%>
     <%_ } _%>
     annotationProcessor ("org.springframework.boot:spring-boot-configuration-processor:${spring_boot_version}") {
         exclude group: "com.vaadin.external.google", module: "android-json"
@@ -507,7 +526,7 @@ task cleanResources(type: Delete) {
 }
 
 wrapper {
-    gradleVersion = "5.2.1"
+    gradleVersion = "5.3.1"
 }
 <%_ if (!skipClient) { _%>
 

@@ -179,5 +179,10 @@ function cleanupOldServerFiles(generator, javaDir, testDir, mainResourceDir, tes
         generator.removeFile(`${javaDir}web/rest/util/PaginationUtil.java`);
         generator.removeFile(`${javaDir}web/rest/util/HeaderUtil.java`);
         generator.removeFile(`${testDir}web/rest/util/PaginationUtilUnitTest.java`);
+        generator.removeFile(`${javaDir}config/OAuth2Configuration.java`);
+        generator.removeFile(`${javaDir}security/OAuth2AuthenticationSuccessHandler.java`);
+
+        generator.removeFolder(`${CLIENT_MAIN_SRC_DIR}app/shared/layout/header/menus`);
+        generator.removeFolder(`${CLIENT_TEST_SRC_DIR}spec/app/shared/layout/header/menus`);
     }
 }

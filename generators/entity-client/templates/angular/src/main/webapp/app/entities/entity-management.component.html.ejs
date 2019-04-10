@@ -45,10 +45,15 @@
     </div>
     <%_ } _%>
     <br/>
-    <div class="table-responsive" *ngIf="<%=entityInstancePlural %>">
-        <table class="table table-striped">
+    
+    <style>
+    .wrapper {
+        display: grid;
+    }
+    </style>
+    <div class="wrapper" *ngIf="<%=entityInstancePlural %>">
             <thead>
-            <tr<% if (pagination !== 'no') { %> jhiSort [(predicate)]="predicate" [(ascending)]="reverse" [callback]="<%=pagination !== 'infinite-scroll' ? 'transition.bind(this)' : 'reset.bind(this)'%>"<% } %>>
+            <div<% if (pagination !== 'no') { %> jhiSort [(predicate)]="predicate" [(ascending)]="reverse" [callback]="<%=pagination !== 'infinite-scroll' ? 'transition.bind(this)' : 'reset.bind(this)'%>"<% } %>>
             <th<% if (pagination !== 'no') { %> jhiSortBy="id"<% } %>><span jhiTranslate="global.field.id">ID</span><% if (pagination !== 'no') { %> <fa-icon [icon]="'sort'"></fa-icon><% } %></th>
             <%_ for (idx in fields) { _%>
             <th<% if (pagination !== 'no') { %> jhiSortBy="<%= fields[idx].fieldName%>"<% } %>><span jhiTranslate="<%=`${i18nKeyPrefix}.${fields[idx].fieldName}` %>"><%= fields[idx].fieldNameHumanized %></span><% if (pagination !== 'no') { %> <fa-icon [icon]="'sort'"></fa-icon><% } %></th>
@@ -62,36 +67,36 @@
             <%_ } _%>
             <%_ } _%>
             <th></th>
-            </tr>
+            </div>
             </thead>
             <tbody<% if (pagination === 'infinite-scroll') { %> infinite-scroll (scrolled)="loadPage(page + 1)" [infiniteScrollDisabled]="page >= links['last']" [infiniteScrollDistance]="0"<% } %>>
-            <tr *ngFor="let <%=entityInstance %> of <%=entityInstancePlural %> ;trackBy: trackId">
-                <td><a [routerLink]="['/<%= entityUrl %>', <%= entityInstance %>.id, 'view' ]">{{<%=entityInstance %>.id}}</a></td>
+            <div *ngFor="let <%=entityInstance %> of <%=entityInstancePlural %> ;trackBy: trackId">
+                <div><a [routerLink]="['/<%= entityUrl %>', <%= entityInstance %>.id, 'view' ]">{{<%=entityInstance %>.id}}</a></div>
                 <%_ for (idx in fields) {
                 const fieldName = fields[idx].fieldName;
                 const fieldNameCapitalized = fields[idx].fieldNameCapitalized;
                 const fieldType = fields[idx].fieldType;
                 const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent; _%>
                 <%_ if (['byte[]', 'ByteBuffer'].includes(fieldType) && fieldTypeBlobContent === 'image') { _%>
-                <td>
+                <div>
                     <a *ngIf="<%= entityInstance %>.<%= fieldName %>" (click)="openFile(<%= entityInstance %>.<%= fieldName %>ContentType, <%= entityInstance %>.<%= fieldName %>)">
                         <img [src]="'data:' + <%=entityInstance %>.<%=fieldName%>ContentType + ';base64,' + <%=entityInstance %>.<%=fieldName%>" style="max-height: 30px;" alt="<%=entityInstance %> image"/>
                     </a>
                     <span *ngIf="<%= entityInstance %>.<%= fieldName %>">{{<%= entityInstance %>.<%= fieldName %>ContentType}}, {{byteSize(<%= entityInstance %>.<%= fieldName %>)}}</span>
-                </td>
+                </div>
                 <%_ } else if (['byte[]', 'ByteBuffer'].includes(fieldType) && fieldTypeBlobContent === 'any') { _%>
-                <td>
+                <div>
                     <a *ngIf="<%= entityInstance %>.<%= fieldName %>" (click)="openFile(<%= entityInstance %>.<%= fieldName %>ContentType, <%= entityInstance %>.<%= fieldName %>)" jhiTranslate="entity.action.open">open</a>
                     <span *ngIf="<%= entityInstance %>.<%= fieldName %>">{{<%= entityInstance %>.<%= fieldName %>ContentType}}, {{byteSize(<%= entityInstance %>.<%= fieldName %>)}}</span>
-                </td>
+                </div>
                 <%_ } else if (fields[idx].fieldIsEnum) { _%>
-                <td jhiTranslate="{{'<%= angularAppName %>.<%= fieldType %>.' + <%= entityInstance %>.<%= fieldName %>}}">{{<%= entityInstance %>.<%= fieldName %>}}</td>
+                <div jhiTranslate="{{'<%= angularAppName %>.<%= fieldType %>.' + <%= entityInstance %>.<%= fieldName %>}}">{{<%= entityInstance %>.<%= fieldName %>}}</div>
                 <%_ } else if (['Instant', 'ZonedDateTime'].includes(fieldType)) { _%>
-                <td>{{<%=entityInstance %>.<%=fieldName%> | date:'medium'}}</td>
+                <div>{{<%=entityInstance %>.<%=fieldName%> | date:'medium'}}</div>
                 <%_ } else if (fieldType === 'LocalDate') { _%>
-                <td>{{<%=entityInstance %>.<%=fieldName%> | date:'mediumDate'}}</td>
+                <div>{{<%=entityInstance %>.<%=fieldName%> | date:'mediumDate'}}</div>
                 <%_ } else { _%>
-                <td>{{<%=entityInstance %>.<%=fieldName%>}}</td>
+                <div>{{<%=entityInstance %>.<%=fieldName%>}}</div>
                 <%_ } _%>
                 <%_ } _%>
                 <%_ for (idx in relationships) {
@@ -106,7 +111,7 @@
                 <%_ if (relationshipType === 'many-to-one'
                 || (relationshipType === 'one-to-one' && ownerSide === true)
                 || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) { _%>
-                <td>
+                <div>
                     <%_ if (otherEntityName === 'user') { _%>
                         <%_ if (relationshipType === 'many-to-many') { _%>
                     <span *ngFor="let <%= relationshipFieldName %> of <%= entityInstance %>.<%= relationshipFieldNamePlural %>; let last = last">
@@ -136,11 +141,11 @@
                             <%_ } _%>
                         <%_ } _%>
                     <%_ } _%>
-                </td>
+                </div>
                 <%_ } _%>
                 <%_ } _%>
-                <td class="text-right">
-                    <div class="btn-group flex-btn-group-container">
+                <div class="text-right">
+                    <div class="btn-group">
                         <button type="submit"
                                 [routerLink]="['/<%= entityUrl %>', <%= entityInstance %>.id, 'view' ]"
                                 class="btn btn-info btn-sm">
@@ -162,11 +167,19 @@
                             <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Delete</span>
                         </button>
                     </div>
-                </td>
-            </tr>
+                </div>
+            </div>
             </tbody>
-        </table>
+        </div>
     </div>
+    
+    <dt>QrCode</dt>
+                <dd>
+                    <div>
+                        <qr-code [value]="'/<%= entityUrl %>/<%= entityInstance %>.id/view'" [size]="150"></qr-code>
+                    </div>
+                </dd>
+                
 <%_ if (databaseType !== 'cassandra') { _%>
     <%_ if (pagination === 'pager') { _%>
     <!-- Pager is not implemented yet, so this is normal pagination instead -->
